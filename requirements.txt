@@ -1,0 +1,18 @@
+# --- Web Server & API ---
+fastapi~=0.115.12
+uvicorn~=0.34.0
+python-multipart~=0.0.9
+
+# --- Data Science & AI ---
+scikit-learn~=1.6.1
+pandas~=2.2.3
+numpy~=2.2.2
+spacy~=3.8.7
+
+# --- Visualization ---
+matplotlib~=3.10.1
+seaborn~=0.13.2
+
+# --- Document Parsing ---
+PyMuPDF~=1.23.21
+python-docx~=1.2.0
