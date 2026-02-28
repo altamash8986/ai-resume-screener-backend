@@ -28,10 +28,14 @@ import uvicorn
 
 init_db()
 app = FastAPI()
-
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:5500",
+    "https://frontend-screen-six.vercel.app", # Add your live frontend URL here
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -271,7 +275,7 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
 def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
     resume_lower = resume_text.lower()
 
-    if(jd_sim>85.0):
+    if(jd_sim>90.0):
         return "⚠️ High Risk (JD Copy-Paste)"
 
     for skill in matched_skills:
@@ -326,7 +330,7 @@ def generate_cluster_chart(report_data):
                      xytext=(8, 8), textcoords='offset points', fontsize=9, color="white")
 
     # 5. Styling
-    plt.title("AI Candidate Clustering (K-Means)", fontsize=16, color="white", pad=15)
+    plt.title("AI Candidate Clustering (K-Means)", fontsize=20, color="white", pad=15)
     plt.xlabel("Skill Match Score (%)", fontsize=12, color="white")
     plt.ylabel("Final Weighted Score (%)", fontsize=12, color="white")  # 🟢 Updated Label
 
