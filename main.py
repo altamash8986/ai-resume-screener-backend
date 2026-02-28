@@ -11,7 +11,7 @@ import io
 import os.path
 import re
 import base64
-from datetime import datetime
+from datetime import datetime,timezone,timedelta
 from typing import List
 
 import fitz  # PyMuPDF
@@ -531,6 +531,8 @@ async def process_resumes(
 
         # --- SAVE TO DATABASE (Place this BEFORE the return) ---
         try:
+            ist_time = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
+            time_str = ist_time.strftime('%Y-%m-%d %H:%M:%S')
             connection = get_db_connection()
             cursor = connection.cursor()
             for res in report_data:  # Use 'report_data' which contains your results
@@ -539,14 +541,15 @@ async def process_resumes(
                             resume_name, decision, authenticity, 
                             final_score, skill_score, exp_years,
                             timestamp
-                        ) VALUES (?, ?, ?, ?, ?, ?,datetime('now','localtime'))
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, (
                     res['Resume'],
                     res['Decision'],
                     res['Authenticity'],
                     res['Final Score'],
                     res['skill_score'],
-                    res['experience_years']
+                    res['experience_years'],
+                    time_str
                 ))
             connection.commit()
         except Exception as e:
