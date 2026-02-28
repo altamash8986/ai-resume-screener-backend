@@ -29,14 +29,18 @@ import uvicorn
 init_db()
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:5500",
+    "https://frontend-screen-six.vercel.app", # Add your live frontend URL here
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # --- 1. CONFIGURATION DATA ---
 try:
     nlp = spacy.load("en_core_web_sm")
