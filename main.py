@@ -385,7 +385,6 @@ def welcome():
 
 
 @app.post("/analyze")
-
 async def process_resumes(
 
             files: List[UploadFile]= File(...),
