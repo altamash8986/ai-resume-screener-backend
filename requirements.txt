@@ -16,3 +16,4 @@ seaborn~=0.13.2
 # --- Document Parsing ---
 PyMuPDF
 python-docx~=1.2.0
+openpyxl
