@@ -25,6 +25,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from spacy.matcher import PhraseMatcher
 import uvicorn
+from transformers import pipeline
 
 init_db()
 app = FastAPI()
@@ -40,6 +41,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+try:
+    ai_detector = pipeline("text-classification",model="roberta-base-openai-detector")
+
+except Exception as e:
+    # return f"failed to load ai model{e}"
+    print(f"failed to load ai model{e}")
+    ai_detector = None
 
 # --- 1. CONFIGURATION DATA ---
 try:
@@ -270,12 +279,30 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
 
     return base64.b64encode(buffer.read()).decode()
 
+def get_ai_plag(text:str)-> float:
+    if not ai_detector or not text.strip():
+        return 0.0
+    # Model has only  512-word limit, we usually check first
+    text_snippet = text[:1500]
+
+    try:
+       result = ai_detector(text_snippet)[0]
+
+       if result['label'] =='Fake':
+           return round(result['score']*100,1)
+       else:
+           return round((1-result['score'])*100,1)
+
+    except Exception as e:
+        return f"AI Detection Error: {e}"
+        return 0.0
+
 
 #-----4. Fake JD Detection ---
 def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
     resume_lower = resume_text.lower()
 
-    if(jd_sim>90.0):
+    if(jd_sim>95.0):
         return "⚠️ High Risk (JD Copy-Paste)"
 
     for skill in matched_skills:
@@ -284,7 +311,16 @@ def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
         if count>7:
             return f"⚠️ High Risk (Stuffing: '{skill}')"
 
+
+    ai_score = get_ai_plag(resume_text)
+    if ai_score>75.0:
+        return f"🤖 AI Generated ({ai_score}%)"
+    elif ai_score>40.0:
+        return f"⚠️ Mixed Content ({ai_score}% AI)"
+
     return "✅ Verified"
+
+
 
 
 # ------------------ CLUSTERING TAB FUNCTION (REFINED) ---------------------------
