@@ -283,10 +283,10 @@ def get_ai_plag(text:str)-> float:
     if not ai_detector or not text.strip():
         return 0.0
     # Model has only  512-word limit, we usually check first
-    text_snippet = text[:1500]
+    text_snippet = text[:2000]
 
     try:
-       result = ai_detector(text_snippet)[0]
+       result = ai_detector(text_snippet,truncation=True,max_length=512)[0]
 
        if result['label'] =='Fake':
            return round(result['score']*100,1)
@@ -294,7 +294,7 @@ def get_ai_plag(text:str)-> float:
            return round((1-result['score'])*100,1)
 
     except Exception as e:
-        return f"AI Detection Error: {e}"
+        return (f"AI Detection Error: {e}")
         return 0.0
 
 
