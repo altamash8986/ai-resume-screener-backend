@@ -283,20 +283,22 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
 def get_ai_plag(text: str) -> float:
     if not ai_detector or not text.strip():
         return 0.0
-    text_snippet = text[:2000]
+    text_snippet = text[250:2250]
     try:
         result = ai_detector(text_snippet, truncation=True, max_length=512)[0]
+        # print(f"\n🕵️ RAW AI OUTPUT: {result}")
+
         label = str(result['label']).lower()
         score = result['score']
 
         if label in ['fake', 'chatgpt', 'label_1', '1']:
-            return float(round(score * 100, 1))
+            final_score = float(round(score * 100, 1))
         else:
-            return float(round((1 - score) * 100, 1))
+            final_score = float(round((1 - score) * 100, 1))
+        return final_score
 
     except Exception as e:
-        print(f"AI Detection Error: {e}")
-
+        print(f"⚠️ AI Detection Error: {e}")
         return 0.0
 #-----4. Fake JD Detection ---
 def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
