@@ -279,25 +279,25 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
 
     return base64.b64encode(buffer.read()).decode()
 
-def get_ai_plag(text:str)-> float:
+
+def get_ai_plag(text: str) -> float:
     if not ai_detector or not text.strip():
         return 0.0
-    # Model has only  512-word limit, we usually check first
     text_snippet = text[:2000]
-
     try:
-       result = ai_detector(text_snippet,truncation=True,max_length=512)[0]
+        result = ai_detector(text_snippet, truncation=True, max_length=512)[0]
+        label = str(result['label']).lower()
+        score = result['score']
 
-       if result['label'] =='Fake':
-           return round(result['score']*100,1)
-       else:
-           return round((1-result['score'])*100,1)
+        if label in ['fake', 'chatgpt', 'label_1', '1']:
+            return float(round(score * 100, 1))
+        else:
+            return float(round((1 - score) * 100, 1))
 
     except Exception as e:
-        return (f"AI Detection Error: {e}")
+        print(f"AI Detection Error: {e}")
+
         return 0.0
-
-
 #-----4. Fake JD Detection ---
 def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
     resume_lower = resume_text.lower()
