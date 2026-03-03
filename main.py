@@ -123,7 +123,7 @@ def is_valid_resume(text:str)->bool:
         "employment", "project", "university", "college", "certification", "profile"
     ]
     match_count = sum(1 for word in resume_keywords if word in text_lower)
-    return match_count >= 2
+    return match_count >= 3
 
 def get_ai_plag(text: str) -> float:
     if not ai_detector or not text.strip():
