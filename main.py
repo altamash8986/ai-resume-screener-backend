@@ -91,7 +91,10 @@ HIRING_STRATEGIES = {
     "Senior-Level": {"skill": 25, "exp": 50, "format": 10, "jd": 10, "cert": 5},
 }
 
-# --- 2. CORE LOGIC ---
+
+# ==========================================
+# 1. CORE UTILITIES (Load First)
+# ==========================================
 
 def extract_text_from_file(file_content: bytes, filename: str):
     text = ""
@@ -110,6 +113,47 @@ def extract_text_from_file(file_content: bytes, filename: str):
         return f"Error reading file: {e}"
     return text
 
+def is_valid_resume(text:str)->bool:
+    if not text or not text.strip():
+        return False
+
+    text_lower = text.lower()
+    resume_keywords = [
+        "experience", "education", "skills", "summary", "objective",
+        "employment", "project", "university", "college", "certification", "profile"
+    ]
+    match_count = sum(1 for word in resume_keywords if word in text_lower)
+    return match_count >= 2
+
+def get_ai_plag(text: str) -> float:
+    if not ai_detector or not text.strip():
+        return 0.0
+    text_snippet = text[250:2250]
+    try:
+        result = ai_detector(text_snippet, truncation=True, max_length=512)[0]
+        label = str(result['label']).lower()
+        score = result['score']
+
+        if label in ['fake', 'chatgpt', 'label_1', '1']:
+            final_score = float(round(score * 100, 1))
+        else:
+            final_score = float(round((1 - score) * 100, 1))
+        return final_score
+
+    except Exception as e:
+        print(f"⚠️ AI Detection Error: {e}")
+        return 0.0
+
+
+# ==========================================
+# 2. FEATURE: DATA EXTRACTION
+# ==========================================
+
+def extract_contact_info(text):
+    email = re.search(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", text)
+    phone = re.search(r"(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}", text)
+    linkedin = re.search(r"linkedin\.com/in/[\w-]+", text)
+    return email.group(0) if email else "---", phone.group(0) if phone else "---", linkedin.group(0) if linkedin else "---"
 
 def extract_skills_from_ner(text, skill_set):
     matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
@@ -118,48 +162,22 @@ def extract_skills_from_ner(text, skill_set):
     doc = nlp(text)
     return list(set([doc[start:end].text.lower() for match_id, start, end in matcher(doc)]))
 
-
 def extract_certifications(text):
     matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
-    patterns = [nlp(cert.lower()) for cert in CERTIFICATES]
+    patterns = [nlp(cert.lower()) for cert in CERTIFICATES] # Assumes CERTIFICATES is defined globally above this logic
     matcher.add("CERTS", patterns)
     doc = nlp(text)
     return list(set([doc[start:end].text.lower() for match_id, start, end in matcher(doc)]))
 
-
-def extract_contact_info(text):
-    email = re.search(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", text)
-    phone = re.search(r"(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}", text)
-    linkedin = re.search(r"linkedin\.com/in/[\w-]+", text)
-    return email.group(0) if email else "---", phone.group(0) if phone else "---", linkedin.group(
-        0) if linkedin else "---"
-
-
-def compute_similarity(jd_text, resume_text):
-    jd_clean = re.sub(r"[^\w\s]", "", jd_text.lower())
-    resume_clean = re.sub(r"[^\w\s]", "", resume_text.lower())
-    if not resume_clean.strip() or not jd_clean.strip(): return 0.0
-    tfidf = TfidfVectorizer().fit_transform([jd_clean, resume_clean])
-    return cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0] * 100
-
-
-def analyze_formatting(resume_text):
-    fmt_score = len([sec for sec in EXPECTED_SECTIONS if sec in resume_text.lower()]) / len(EXPECTED_SECTIONS) * 100
-    return round(fmt_score, 2)
-
-
-
 def extract_experience_nlp(text):
-
     text_lower = text.lower()
-
     start_match = re.search(
         r"(?:^|\n)\s*(work\s+experience|experience|employment|professional\s+experience|internship|internships)\b",
         text_lower
     )
 
     if not start_match:
-        return 0.0, 0.0   # ❌ NO FALLBACK — prevents education miscount
+        return 0.0, 0.0
 
     start_idx = start_match.end()
 
@@ -199,14 +217,12 @@ def extract_experience_nlp(text):
         return None
 
     pattern = r"([A-Za-z]{3,9}\s*\d{4})\s*(?:-|to)\s*([A-Za-z]{3,9}\s*\d{4}|present|current|ongoing)"
-
     matches = re.findall(pattern, exp_text_block, re.IGNORECASE)
 
     if not matches:
         return 0.0, 0.0
 
     ranges = []
-
     for start, end in matches:
         start_parsed = parse_date(start)
         end_parsed = parse_date(end)
@@ -238,10 +254,14 @@ def extract_experience_nlp(text):
     )
 
     exp_years = round(total_months / 12, 2)
-
     exp_score = 100 if exp_years >= 5 else round((exp_years / 5) * 100, 2)
 
     return exp_years, exp_score
+
+
+# ==========================================
+# 3. FEATURE: MATHEMATICAL & NLP SCORING
+# ==========================================
 
 def smart_match(skills_required, resume_text):
     found = extract_skills_from_ner(resume_text, skills_required)
@@ -249,7 +269,43 @@ def smart_match(skills_required, resume_text):
     missed = [skill for skill in skills_required if skill not in matched]
     return matched, missed
 
-# ------------------comparison tab functions---------------------------
+def compute_similarity(jd_text, resume_text):
+    jd_clean = re.sub(r"[^\w\s]", "", jd_text.lower())
+    resume_clean = re.sub(r"[^\w\s]", "", resume_text.lower())
+    if not resume_clean.strip() or not jd_clean.strip(): return 0.0
+    tfidf = TfidfVectorizer().fit_transform([jd_clean, resume_clean])
+    return cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0] * 100
+
+def analyze_formatting(resume_text):
+    fmt_score = len([sec for sec in EXPECTED_SECTIONS if sec in resume_text.lower()]) / len(EXPECTED_SECTIONS) * 100
+    return round(fmt_score, 2)
+
+def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
+    if not is_valid_resume(resume_text):
+        return "❌ Invalid Document"
+
+    resume_lower = resume_text.lower()
+
+    if(jd_sim>95.0):
+        return "⚠️ High Risk (JD Copy-Paste)"
+
+    for skill in matched_skills:
+        count = len(re.findall(rf'\b{re.escape(skill)}\b',resume_lower))
+        if count>7:
+            return f"⚠️ High Risk (Stuffing: '{skill}')"
+
+    ai_score = get_ai_plag(resume_text)
+    if ai_score>75.0:
+        return f"🤖 AI Generated ({ai_score}%)"
+    elif ai_score>40.0:
+        return f"⚠️ Mixed Content ({ai_score}% AI)"
+
+    return "✅ Verified"
+
+
+# ==========================================
+# 4. TAB FUNCTIONS (ML Clustering, Salary, Comparison)
+# ==========================================
 
 def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart_type):
     plt.figure(figsize=(12, 5))
@@ -271,7 +327,6 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
     plt.ylabel("Score (0-100)")
     plt.tight_layout()
 
-    # Convert plot to base64
     buffer = io.BytesIO()
     plt.savefig(buffer, format="png")
     plt.close()
@@ -279,117 +334,45 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
 
     return base64.b64encode(buffer.read()).decode()
 
-def is_valid_resume(text:str)->bool:
-    if not text or not text.strip():
-        return False
-
-    text_lower = text.lower()
-
-    resume_keywords = ["experience", "education", "skills", "summary", "objective",
-        "employment", "project", "university", "college", "certification", "profile"]
-
-    match_count = sum(1 for word in resume_keywords if word in text_lower)
-
-    return match_count>=2
-
-def get_ai_plag(text: str) -> float:
-    if not ai_detector or not text.strip():
-        return 0.0
-    text_snippet = text[250:2250]
-    try:
-        result = ai_detector(text_snippet, truncation=True, max_length=512)[0]
-        # print(f"\n🕵️ RAW AI OUTPUT: {result}")
-
-        label = str(result['label']).lower()
-        score = result['score']
-
-        if label in ['fake', 'chatgpt', 'label_1', '1']:
-            final_score = float(round(score * 100, 1))
-        else:
-            final_score = float(round((1 - score) * 100, 1))
-        return final_score
-
-    except Exception as e:
-        print(f"⚠️ AI Detection Error: {e}")
-        return 0.0
-
-#-----4. Fake JD Detection ---
-def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
-
-    if not is_valid_resume(resume_text):
-        return "❌ Invalid Document"
-
-    resume_lower = resume_text.lower()
-
-
-    if(jd_sim>95.0):
-        return "⚠️ High Risk (JD Copy-Paste)"
-
-    for skill in matched_skills:
-        count = len(re.findall(rf'\b{re.escape(skill)}\b',resume_lower))
-
-        if count>7:
-            return f"⚠️ High Risk (Stuffing: '{skill}')"
-
-
-    ai_score = get_ai_plag(resume_text)
-    if ai_score>75.0:
-        return f"🤖 AI Generated ({ai_score}%)"
-    elif ai_score>25.0:
-        return f"⚠️ Mixed Content ({ai_score}% AI)"
-
-
-    return "✅ Verified"
-
-
-
-
-# ------------------ CLUSTERING TAB FUNCTION (REFINED) ---------------------------
 def generate_cluster_chart(report_data):
     if len(report_data) < 3:
         return ""
 
-    # 1. Extract Data
     names = [r["Resume"] for r in report_data]
     final_scores = [r["Final Score"] for r in report_data]
     skills = [r["skill_score"] for r in report_data]
 
     X = np.array(list(zip(skills, final_scores)))
 
-    # 2. Run K-Means
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     clusters = kmeans.fit_predict(X)
-
     centers = kmeans.cluster_centers_
 
     quality_scores = centers.sum(axis=1)
     sorted_idx = np.argsort(quality_scores)
 
     color_map = {
-        sorted_idx[2]: '#10b981',  # Green (Top)
-        sorted_idx[1]: '#f59e0b',  # Yellow (Mid)
-        sorted_idx[0]: '#ef4444'  # Red (Low)
+        sorted_idx[2]: '#10b981',
+        sorted_idx[1]: '#f59e0b',
+        sorted_idx[0]: '#ef4444'
     }
 
-    # 3. Draw Plot
     plt.figure(figsize=(14, 6))
 
     for i in range(3):
         cluster_points = X[clusters == i]
         plt.scatter(cluster_points[:, 0], cluster_points[:, 1],
-                    s=150, c=color_map[i],  # 🟢 Uses the smart color map
+                    s=150, c=color_map[i],
                     label=f"Cluster {i + 1}", edgecolors='white', linewidth=2)
 
-    # 4. Annotations
     for i, name in enumerate(names):
         short_name = name[:12] + "..." if len(name) > 12 else name
         plt.annotate(short_name, (skills[i], final_scores[i]),
                      xytext=(8, 8), textcoords='offset points', fontsize=9, color="white")
 
-    # 5. Styling
     plt.title("AI Candidate Clustering (K-Means)", fontsize=20, color="white", pad=15)
     plt.xlabel("Skill Match Score (%)", fontsize=12, color="white")
-    plt.ylabel("Final Weighted Score (%)", fontsize=12, color="white")  # 🟢 Updated Label
+    plt.ylabel("Final Weighted Score (%)", fontsize=12, color="white")
 
     ax = plt.gca()
     ax.set_facecolor('#1e293b')
@@ -398,7 +381,6 @@ def generate_cluster_chart(report_data):
     for spine in ax.spines.values():
         spine.set_color('#334155')
 
-    # Custom Legend
     from matplotlib.lines import Line2D
     legend_elements = [
         Line2D([0], [0], marker='o', color='w', label='Top Talent', markerfacecolor='#10b981', markersize=10),
@@ -418,11 +400,6 @@ def generate_cluster_chart(report_data):
     return base64.b64encode(buffer.read()).decode()
 
 def predict_salary(final_score, exp_years):
-    ''''
-    Base Salary: 30000 (INR per month)
-    value per final year score: 500
-    value per year of experience:5000
-    '''
     x_train = np.array([[50,0],[60,1],[70,2],[80,3],[90,5],[100,10]])
     y_train = np.array([35000,45000,55000,70000,95000,150000])
 
@@ -432,7 +409,6 @@ def predict_salary(final_score, exp_years):
     prediction = model.predict(np.array([[final_score,exp_years]]))
 
     return f"₹{max(30000, int(prediction[0])):,} per month"
-
 
 # --- 3. API ENDPOINT ---
 
