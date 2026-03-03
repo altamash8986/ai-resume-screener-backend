@@ -279,6 +279,18 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
 
     return base64.b64encode(buffer.read()).decode()
 
+def is_valid_resume(text:str)->bool:
+    if not text or not text.strip():
+        return False
+
+    text_lower = text.lower()
+
+    resume_keywords = ["experience", "education", "skills", "summary", "objective",
+        "employment", "project", "university", "college", "certification", "profile"]
+
+    match_count = sum(1 for word in resume_keywords if word in text_lower)
+
+    return match_count>=2
 
 def get_ai_plag(text: str) -> float:
     if not ai_detector or not text.strip():
@@ -300,9 +312,15 @@ def get_ai_plag(text: str) -> float:
     except Exception as e:
         print(f"⚠️ AI Detection Error: {e}")
         return 0.0
+
 #-----4. Fake JD Detection ---
 def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
+
+    if not is_valid_resume(resume_text):
+        return "❌ Invalid Document"
+
     resume_lower = resume_text.lower()
+
 
     if(jd_sim>95.0):
         return "⚠️ High Risk (JD Copy-Paste)"
@@ -317,8 +335,9 @@ def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
     ai_score = get_ai_plag(resume_text)
     if ai_score>75.0:
         return f"🤖 AI Generated ({ai_score}%)"
-    elif ai_score>40.0:
+    elif ai_score>25.0:
         return f"⚠️ Mixed Content ({ai_score}% AI)"
+
 
     return "✅ Verified"
 
