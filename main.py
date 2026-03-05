@@ -32,7 +32,7 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5500",
-    "https://frontend-screen-six.vercel.app", # Add your live frontend URL here
+    "https://frontend-screen-six.vercel.app",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -46,7 +46,6 @@ try:
     ai_detector = pipeline("text-classification",model="roberta-base-openai-detector")
 
 except Exception as e:
-    # return f"failed to load ai model{e}"
     print(f"failed to load ai model{e}")
     ai_detector = None
 
@@ -59,7 +58,7 @@ except OSError:
 GET_DEFAULT_ROLES = {
     "AI/ML Engineer": ["python", "numpy", "pandas", "scikit-learn", "pytorch", "deep learning", "machine learning",
                        "matplotlib", "computer vision", "nlp"],
-    "Software Engineer": ["python", "java", "c++", "sql", "linux", "object oriented programming", "data structures"],
+    "Software Engineer": ["python", "java", "c++", "sql", "object oriented programming", "data structures"],
     "Data Analyst": ["excel", "sql", "power bi", "tableau", "python", "pandas", "statistics", "data visualization"],
     "DevOps Engineer": ["linux", "docker", "kubernetes", "aws", "azure", "terraform", "jenkins", "git", "ci/cd",
                         "shell scripting"],
@@ -123,7 +122,7 @@ def is_valid_resume(text:str)->bool:
         "employment", "project", "university", "college", "certification", "profile"
     ]
     match_count = sum(1 for word in resume_keywords if word in text_lower)
-    return match_count >= 3
+    return match_count >= 4
 
 def get_ai_plag(text: str) -> float:
     if not ai_detector or not text.strip():
@@ -630,19 +629,26 @@ async def clear_history():
 # -------------------COMPARISON TAB START------------------------
 @app.post("/comparison")
 async def compare_resumes(
-    file_a: UploadFile = File(...),
-    file_b: UploadFile = File(...),
-    role: str = Form("AI/ML Engineer"),
-    input_mode: str = Form("Use Job Role"),
-    jd_textbox: str = Form(""),
-    chart_type: str = Form("Bar")
+        file_a: UploadFile = File(...),
+        file_b: UploadFile = File(...),
+        role: str = Form("AI/ML Engineer"),
+        input_mode: str = Form("Use Job Role"),
+        jd_textbox: str = Form(""),
+        chart_type: str = Form("Bar")
 ):
     # Read files
     content_a = await file_a.read()
     content_b = await file_b.read()
 
+    # Extract text from files
     text_a = extract_text_from_file(content_a, file_a.filename)
     text_b = extract_text_from_file(content_b, file_b.filename)
+
+    if not is_valid_resume(text_a):
+        raise HTTPException(status_code=400, detail=f"'{file_a.filename}' is not a valid resume document.")
+
+    if not is_valid_resume(text_b):
+        raise HTTPException(status_code=400, detail=f"'{file_b.filename}' is not a valid resume document.")
 
     # Determine skills
     if input_mode == "Use Job Role":
@@ -651,36 +657,39 @@ async def compare_resumes(
         all_skills = set(skill for skills in GET_DEFAULT_ROLES.values() for skill in skills)
         skills_required = extract_skills_from_ner(jd_textbox.lower(), all_skills)
 
+    # Prevent Division by Zero errors
     if not skills_required:
-        raise HTTPException(status_code=400, detail="No skills defined")
+        raise HTTPException(status_code=400, detail="No skills defined for comparison.")
 
-    # Skill Score
+    # Skill Score Calculation
     matched_a, _ = smart_match(skills_required, text_a)
     matched_b, _ = smart_match(skills_required, text_b)
 
     skill_a = len(matched_a) / len(skills_required) * 100
     skill_b = len(matched_b) / len(skills_required) * 100
 
-    # Experience
+    # Experience Extraction
     _, exp_a = extract_experience_nlp(text_a)
     _, exp_b = extract_experience_nlp(text_b)
 
-    # JD Similarity
+    # JD Similarity Score
     jd_sim_a = compute_similarity(" ".join(skills_required), text_a)
     jd_sim_b = compute_similarity(" ".join(skills_required), text_b)
 
-    # Format
+    # Formatting Check
     fmt_a = analyze_formatting(text_a)
     fmt_b = analyze_formatting(text_b)
 
-    # Cert
+    # Certification Score
     cert_a = min(len(extract_certifications(text_a)) * 20, 100)
     cert_b = min(len(extract_certifications(text_b)) * 20, 100)
 
+    # Package the Metrics for the Chart
     metrics = ["Skill", "Experience", "JD", "Format", "Cert"]
     scores_a = [skill_a, exp_a, jd_sim_a, fmt_a, cert_a]
     scores_b = [skill_b, exp_b, jd_sim_b, fmt_b, cert_b]
 
+    # Generate Chart Base64
     chart_base64 = generate_comparison_chart(
         file_a.filename,
         file_b.filename,
@@ -699,7 +708,6 @@ async def compare_resumes(
         "matched_a": matched_a,
         "matched_b": matched_b
     }
-
 # ---  CLUSTERING TAB  ---
 @app.post("/get_clusters")
 async def get_clusters(results: List[dict]):
