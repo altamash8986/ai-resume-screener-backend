@@ -29,10 +29,18 @@ from transformers import pipeline
 
 init_db()
 app = FastAPI()
+<<<<<<< HEAD
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5500",
     "https://frontend-screen-six.vercel.app",
+=======
+
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:5500",
+    "https://frontend-screen-six.vercel.app", # Add your live frontend URL here
+>>>>>>> 5625568a2fe81595974d2d8e3d9a904d2aed2efd
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +49,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+<<<<<<< HEAD
 
 try:
     ai_detector = pipeline("text-classification",model="roberta-base-openai-detector")
@@ -49,6 +58,8 @@ except Exception as e:
     print(f"failed to load ai model{e}")
     ai_detector = None
 
+=======
+>>>>>>> 5625568a2fe81595974d2d8e3d9a904d2aed2efd
 # --- 1. CONFIGURATION DATA ---
 try:
     nlp = spacy.load("en_core_web_sm")
