@@ -252,11 +252,13 @@ B.Tech Artificial Intelligence & Machine Learning
 
 Aspiring Full Stack AI Engineer
 
-### Connect With Me
+## 🌐 Connect With Me
 
-* LinkedIn: https://www.linkedin.com/in/mohd-altamash-0997592a6/
-* GitHub: https://github.com/altamash8986
-* LeetCode: https://leetcode.com/u/altamash007/
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?logo=linkedin)](https://www.linkedin.com/in/mohd-altamash-0997592a6/)
+
+[![GitHub](https://img.shields.io/badge/GitHub-Profile-black?logo=github)](https://github.com/altamash8986)
+
+[![LeetCode](https://img.shields.io/badge/LeetCode-Profile-orange?logo=leetcode)](https://leetcode.com/u/altamash007/)
 
 ---
 
@@ -268,7 +270,7 @@ If you found this project useful, please give it a star on GitHub.
 
 # 📜 License
 
-This project is licensed under the MIT License.
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 ---
 
