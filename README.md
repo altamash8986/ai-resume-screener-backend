@@ -244,18 +244,6 @@ Select or Reject Candidate
 
 ---
 
-# ⭐ Support
-
-If you found this project useful, please give it a star on GitHub.
-
----
-
-# 📜 License
-
-![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
-
----
-
 # 👨‍💻 Author
 
 ## Mohd Altamash
@@ -269,6 +257,12 @@ Aspiring Full Stack AI Engineer
 - [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?logo=linkedin)](https://www.linkedin.com/in/mohd-altamash-0997592a6/)
 - [![GitHub](https://img.shields.io/badge/GitHub-Profile-black?logo=github)](https://github.com/altamash8986)
 - [![LeetCode](https://img.shields.io/badge/LeetCode-Profile-orange?logo=leetcode)](https://leetcode.com/u/altamash007/)
+
+---
+
+# 📜 License
+
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
 ---
 
