@@ -14,7 +14,7 @@ import base64
 from datetime import datetime,timezone,timedelta
 from typing import List
 
-import fitz  # PyMuPDF
+import fitz
 import matplotlib.pyplot as plt
 import pandas as pd
 import spacy
@@ -33,7 +33,7 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5500",
-    "https://frontend-screen-six.vercel.app", # Add your live frontend URL here
+    "https://frontend-screen-six.vercel.app",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -50,11 +50,12 @@ except Exception as e:
     print(f"failed to load ai model{e}")
     ai_detector = None
 
-# --- 1. CONFIGURATION DATA ---
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
     raise RuntimeError("Spacy model not found. Run: python -m spacy download en_core_web_sm")
+
+# start here main code
 
 GET_DEFAULT_ROLES = {
     "AI/ML Engineer": ["python", "numpy", "pandas", "scikit-learn", "pytorch", "deep learning", "machine learning",
@@ -92,10 +93,7 @@ HIRING_STRATEGIES = {
 }
 
 
-# ==========================================
-# 1. CORE UTILITIES (Load First)
-# ==========================================
-
+#loading functions
 def extract_text_from_file(file_content: bytes, filename: str):
     text = ""
     try:
@@ -145,10 +143,7 @@ def get_ai_plag(text: str) -> float:
         return 0.0
 
 
-# ==========================================
-# 2. FEATURE: DATA EXTRACTION
-# ==========================================
-
+#feature data extraction
 def extract_contact_info(text):
     email = re.search(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", text)
     phone = re.search(r"(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}", text)
@@ -164,11 +159,12 @@ def extract_skills_from_ner(text, skill_set):
 
 def extract_certifications(text):
     matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
-    patterns = [nlp(cert.lower()) for cert in CERTIFICATES] # Assumes CERTIFICATES is defined globally above this logic
+    patterns = [nlp(cert.lower()) for cert in CERTIFICATES]
     matcher.add("CERTS", patterns)
     doc = nlp(text)
     return list(set([doc[start:end].text.lower() for match_id, start, end in matcher(doc)]))
 
+#experience extraction section
 def extract_experience_nlp(text):
     text_lower = text.lower()
     start_match = re.search(
@@ -259,10 +255,7 @@ def extract_experience_nlp(text):
     return exp_years, exp_score
 
 
-# ==========================================
-# 3. FEATURE: MATHEMATICAL & NLP SCORING
-# ==========================================
-
+#mathmatical calculations
 def smart_match(skills_required, resume_text):
     found = extract_skills_from_ner(resume_text, skills_required)
     matched = [skill for skill in skills_required if skill in found]
@@ -280,6 +273,7 @@ def analyze_formatting(resume_text):
     fmt_score = len([sec for sec in EXPECTED_SECTIONS if sec in resume_text.lower()]) / len(EXPECTED_SECTIONS) * 100
     return round(fmt_score, 2)
 
+#checking authenticated whether a resume has fake or original
 def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
     if not is_valid_resume(resume_text):
         return "❌ Invalid Document"
@@ -303,10 +297,7 @@ def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
     return "✅ Verified"
 
 
-# ==========================================
-# 4. TAB FUNCTIONS (ML Clustering, Salary, Comparison)
-# ==========================================
-
+#comparison tab start
 def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart_type):
     plt.figure(figsize=(12, 5))
 
@@ -334,6 +325,7 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
 
     return base64.b64encode(buffer.read()).decode()
 
+#generating clustering charts
 def generate_cluster_chart(report_data):
     if len(report_data) < 3:
         return ""
@@ -399,19 +391,38 @@ def generate_cluster_chart(report_data):
 
     return base64.b64encode(buffer.read()).decode()
 
+#salary section
+
+np.random.seed(42)
+
+# Generate 1000 samples
+final_scores = np.random.randint(40, 101, 1000)
+experience = np.random.randint(0, 16, 1000)
+
+# Realistic salary formula
+salary = (
+    25000 +
+    final_scores * 400 +
+    experience * 6000 +
+    np.random.randint(-3000, 3000, 1000)
+)
+
+# Combine features
+x_train = np.column_stack((final_scores, experience))
+y_train = salary
+
+# Train the model
+model = LinearRegression()
+model.fit(x_train, y_train)
+
 def predict_salary(final_score, exp_years):
-    x_train = np.array([[50,0],[60,1],[70,2],[80,3],[90,5],[100,10]])
-    y_train = np.array([35000,45000,55000,70000,95000,150000])
+    prediction = model.predict([[final_score, exp_years]])
 
-    model = LinearRegression()
-    model.fit(x_train,y_train)
+    return f"₹{int(prediction[0]):,} per month"
 
-    prediction = model.predict(np.array([[final_score,exp_years]]))
 
-    return f"₹{max(30000, int(prediction[0])):,} per month"
 
-# --- 3. API ENDPOINT ---
-
+#api connection starts below
 @app.get("/")
 def welcome():
     return {"message": "Ai Resume Screener is Running ✅"}
@@ -462,8 +473,7 @@ async def process_resumes(
             email, phone, linkedin = extract_contact_info(resume_text)
             processed_text = resume_text.lower()
 
-            # --- SCORING CALCULATIONS ---
-
+            #scoring
             # 1. JD Similarity
             jd_sim = compute_similarity(" ".join(skills_required), processed_text)
 
@@ -483,7 +493,7 @@ async def process_resumes(
             # 5. Experience Calculation (Tuple Unpacking)
             calculated_years, experience_score_val = extract_experience_nlp(resume_text)
 
-            # --- NEW: Convert Decimal Years to "X Years Y Months" String ---
+
             total_months_int = int(round(calculated_years * 12))
             years_int = total_months_int // 12
             months_int = total_months_int % 12
@@ -494,7 +504,6 @@ async def process_resumes(
                 exp_display_str = f"{years_int} years"
             else:
                 exp_display_str = f"{years_int} years {months_int} months"
-            # ---------------------------------------------------------------
 
             w_skill = weights.get("skill", 0)
             w_exp = weights.get("exp", 0)
@@ -514,8 +523,8 @@ async def process_resumes(
                                       w_fmt * fmt_score
                               ) / total_weight
 
-            # --- Decision Logic ---
 
+            #final decision logic
             if experience_level > 0 and total_months_int <= experience_level:
                 decision = f"❌ Rejected"
                 continue
@@ -535,7 +544,7 @@ async def process_resumes(
                 "Email": email,
                 "Phone": phone,
                 "skill_score": round(skill_score, 2),
-                "experience_years": exp_display_str,  # <--- UPDATED FIELD
+                "experience_years": exp_display_str,
                 "experience": round(experience_score_val, 2),
                 "jd_sim": round(jd_sim, 2),
                 "cert_score": round(cert_score, 2),
@@ -562,13 +571,13 @@ async def process_resumes(
 
         cluster_chart_base64 = generate_cluster_chart(report_data)
 
-        # --- SAVE TO DATABASE (Place this BEFORE the return) ---
+
         try:
             ist_time = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
             time_str = ist_time.strftime('%Y-%m-%d %H:%M:%S')
             connection = get_db_connection()
             cursor = connection.cursor()
-            for res in report_data:  # Use 'report_data' which contains your results
+            for res in report_data:
                 cursor.execute("""
                         INSERT INTO candidates (
                             resume_name, decision, authenticity, 
@@ -588,7 +597,7 @@ async def process_resumes(
         except Exception as e:
             print(f"⚠️ Database Error: {e}")
         finally:
-            connection.close()  # Always close to avoid 'Database Locked' errors
+            connection.close()
 
         return {
             "results": report_data,
@@ -597,9 +606,7 @@ async def process_resumes(
             "cluster_chart":cluster_chart_base64
         }
 
-        # --- ROUTE 1: GET (To view the data in your table) ---
-
-
+#getting the history
 @app.get("/history")
 async def get_history():
     try:
@@ -614,7 +621,7 @@ async def get_history():
         return {"results": [], "error": str(e)}
 
 
-# --- ROUTE 2: DELETE (For the "Wipe Database" button) ---
+#wipe out database data
 @app.delete("/clear_history")  # Changed path to avoid conflict
 async def clear_history():
     try:
@@ -626,6 +633,7 @@ async def clear_history():
         return {"message": "Database cleared successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # -------------------COMPARISON TAB START------------------------
 @app.post("/comparison")
@@ -709,6 +717,7 @@ async def compare_resumes(
         "matched_a": matched_a,
         "matched_b": matched_b
     }
+
 # ---  CLUSTERING TAB  ---
 @app.post("/get_clusters")
 async def get_clusters(results: List[dict]):
@@ -717,7 +726,7 @@ async def get_clusters(results: List[dict]):
         raise HTTPException(status_code=400, detail="At least 3 candidates are required for clustering.")
 
     try:
-        # Re-use your existing logic function
+
         chart_base64 = generate_cluster_chart(results)
         return {"status": "success", "cluster_chart": chart_base64}
     except Exception as e:
