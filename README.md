@@ -203,55 +203,6 @@ Select or Reject Candidate
 
 ---
 
-# 📂 Project Structure
-
-```bash
-Advanced-AI-Resume-Screener/
-│
-├── main.py
-├── database.py
-├── requirements.txt
-├── Dockerfile
-├── README.md
-│
-├── analyze.png
-├── compare.png
-├── clustering.png
-├── database.png
-│
-└── static/
-```
-
----
-
-# 🚀 Installation
-
-## Clone Repository
-
-```bash
-git clone https://github.com/altamash8986/ai-resume-screener-backend.git
-```
-
-## Navigate to Project
-
-```bash
-cd ai-resume-screener-backend
-```
-
-## Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-## Run Application
-
-```bash
-uvicorn main:app --reload
-```
-
----
-
 # 🎯 Use Cases
 
 * HR Departments
