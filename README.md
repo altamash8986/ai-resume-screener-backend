@@ -244,6 +244,18 @@ Select or Reject Candidate
 
 ---
 
+# ⭐ Support
+
+If you found this project useful, please give it a star on GitHub.
+
+---
+
+# 📜 License
+
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
+
+---
+
 # 👨‍💻 Author
 
 ## Mohd Altamash
@@ -260,21 +272,5 @@ Aspiring Full Stack AI Engineer
 
 ---
 
-# ⭐ Support
 
-If you found this project useful, please give it a star on GitHub.
-
----
-
-# 📜 License
-
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-
----
-
-<div align="center">
-
-### Built with ❤️ using Python, FastAPI, Machine Learning, and JavaScript
-
-</div>
 
