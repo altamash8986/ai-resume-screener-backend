@@ -59,26 +59,48 @@ except OSError:
 
 GET_DEFAULT_ROLES = {
     "AI/ML Engineer": ["python", "numpy", "pandas", "scikit-learn", "pytorch", "deep learning", "machine learning",
-                       "matplotlib", "computer vision", "nlp"],
-    "Software Engineer": ["python", "java", "c++", "sql", "object oriented programming", "data structures"],
-    "Data Analyst": ["excel", "sql", "power bi", "tableau", "python", "pandas", "statistics", "data visualization"],
+                       "matplotlib", "computer vision", "nlp", "tensorflow", "llm fine-tuning", "rag", "langchain",
+                       "vector databases", "mlops", "docker", "transformers", "hugging face", "aws"],
+
+    "Software Engineer": ["python", "java", "c++", "sql", "object oriented programming", "data structures",
+                          "algorithms", "system design", "rest api", "git", "agile", "typescript"],
+
+    "Data Analyst": ["excel", "sql", "power bi", "tableau", "python", "pandas", "statistics", "data visualization",
+                     "looker", "bigquery", "dbt"],
+
     "DevOps Engineer": ["linux", "docker", "kubernetes", "aws", "azure", "terraform", "jenkins", "git", "ci/cd",
-                        "shell scripting"],
-    "Frontend Developer": ["html", "css", "javascript", "react", "typescript", "redux", "bootstrap", "git"],
+                        "shell scripting", "github actions", "prometheus", "grafana", "argocd", "devsecops",
+                        "bash scripting", "ansible", "python"],
+
+    "Frontend Developer": ["html", "css", "javascript", "react", "typescript", "redux", "bootstrap", "git",
+                           "next.js", "tailwind css", "rest api", "responsive design", "web performance"],
+
     "Backend Developer": ["node.js", "express", "python", "flask", "django", "sql", "mongodb", "rest api", "jwt",
-                          "graphql"],
+                          "graphql", "fastapi", "spring boot", "postgresql", "redis", "docker", "microservices"],
+
     "Data Engineer": ["python", "sql", "spark", "hadoop", "data warehouse", "airflow", "etl", "big data", "aws",
-                      "kafka"],
+                      "kafka", "dbt", "snowflake", "bigquery", "databricks", "data modeling", "docker",
+                      "postgresql"],
+
     "Cloud Engineer": ["aws", "azure", "gcp", "terraform", "cloudformation", "devops", "kubernetes", "linux",
-                       "networking", "docker"],
+                       "networking", "docker", "iam", "devsecops", "cost optimization", "serverless", "monitoring"],
+
     "Cybersecurity Engineer": ["network security", "firewalls", "penetration testing", "vulnerability assessment",
-                               "siem", "ids", "ips", "cryptography", "ethical hacking", "incident response"],
-    "Mobile App Developer": ["android", "kotlin", "java", "flutter", "dart", "ios", "swift", "react native", "ui/ux",
-                             "firebase"],
+                               "siem", "ids", "ips", "cryptography", "ethical hacking", "incident response",
+                               "zero trust architecture", "cloud security", "devsecops", "soc",
+                               "threat intelligence", "python", "compliance"],
+
+    "Mobile App Developer": ["android", "kotlin", "java", "flutter", "dart", "ios", "swift", "react native",
+                             "ui/ux", "firebase", "rest api", "jetpack compose", "ci/cd"],
+
     "Full Stack Developer": ["html", "css", "javascript", "react", "node.js", "express", "mongodb", "sql", "api",
-                             "git"],
+                             "git", "typescript", "next.js", "python", "fastapi", "postgresql", "docker",
+                             "tailwind css", "aws", "system design"],
+
     "QA/Test Engineer": ["manual testing", "automation testing", "selenium", "pytest", "bug tracking", "jira",
-                         "test cases", "unit testing", "integration testing", "qa process"],
+                         "test cases", "unit testing", "integration testing", "qa process", "playwright",
+                         "cypress", "api testing", "postman", "ci/cd", "performance testing",
+                         "ai testing tools", "test planning"],
 }
 
 CERTIFICATES = ["aws", "google", "microsoft", "amazon", "forage", "ibm", "meta", "coursera", "udemy", "freecodecamp",
