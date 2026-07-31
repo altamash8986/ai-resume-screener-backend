@@ -58,49 +58,100 @@ except OSError:
 # start here main code
 
 GET_DEFAULT_ROLES = {
-    "AI/ML Engineer": ["python", "numpy", "pandas", "scikit-learn", "pytorch", "deep learning", "machine learning",
-                       "matplotlib", "computer vision", "nlp", "tensorflow", "llm fine-tuning", "rag", "langchain",
-                       "vector databases", "mlops", "docker", "transformers", "hugging face", "aws"],
+    "AI/ML Engineer": [
+        "python", "numpy", "pandas", "scikit-learn", "matplotlib",
+        "machine learning", "data analysis", "pytorch",
+        "statistics", "git", "deep learning", "neural networks"
+    ],
 
-    "Software Engineer": ["python", "java", "c++", "sql", "object oriented programming", "data structures",
-                          "algorithms", "system design", "rest api", "git", "agile", "typescript"],
+    "Software Engineer": [
+        "python", "java", "c++", "sql", "data structures and algorithms", "git", "object oriented programming",
+        "rest api", "problem solving",
+    ],
 
-    "Data Analyst": ["excel", "sql", "power bi", "tableau", "python", "pandas", "statistics", "data visualization",
-                     "looker", "bigquery", "dbt"],
+    "Data Analyst": [
+        "excel", "sql", "python", "pandas", "data visualization",
+        "statistics", "power bi", "tableau", "data cleaning", "reporting"
+    ],
 
-    "DevOps Engineer": ["linux", "docker", "kubernetes", "aws", "azure", "terraform", "jenkins", "git", "ci/cd",
-                        "shell scripting", "github actions", "prometheus", "grafana", "argocd", "devsecops",
-                        "bash scripting", "ansible", "python"],
+    "DevOps Engineer": [
+        "linux", "git", "docker", "ci/cd", "bash scripting",
+        "shell scripting", "networking", "python", "github actions"
+    ],
 
-    "Frontend Developer": ["html", "css", "javascript", "react", "typescript", "redux", "bootstrap", "git",
-                           "next.js", "tailwind css", "rest api", "responsive design", "web performance"],
+    "Frontend Developer": [
+        "html", "css", "javascript", "react", "git",
+        "responsive design", "bootstrap", "tailwind css", "typescript"
+    ],
 
-    "Backend Developer": ["node.js", "express", "python", "flask", "django", "sql", "mongodb", "rest api", "jwt",
-                          "graphql", "fastapi", "spring boot", "postgresql", "redis", "docker", "microservices"],
+    "Backend Developer": [
+        "python", "node.js", "sql", "rest api", "git",
+        "flask", "fastapi", "mongodb", "postgresql", "authentication"
+    ],
+    "Full Stack Developer": [
+        "html", "css", "javascript", "react", "node.js",
+        "python", "sql", "rest api", "git", "mongodb", "docker"
+    ],
 
-    "Data Engineer": ["python", "sql", "spark", "hadoop", "data warehouse", "airflow", "etl", "big data", "aws",
-                      "kafka", "dbt", "snowflake", "bigquery", "databricks", "data modeling", "docker",
-                      "postgresql"],
+    "Data Engineer": [
+        "python", "sql", "etl", "pandas", "postgresql",
+        "git", "data pipelines", "docker", "airflow"
+    ],
 
-    "Cloud Engineer": ["aws", "azure", "gcp", "terraform", "cloudformation", "devops", "kubernetes", "linux",
-                       "networking", "docker", "iam", "devsecops", "cost optimization", "serverless", "monitoring"],
+    "Cloud Engineer": [
+        "aws", "linux", "docker", "networking", "git",
+        "virtual machines", "storage", "iam", "monitoring"
+    ],
 
-    "Cybersecurity Engineer": ["network security", "firewalls", "penetration testing", "vulnerability assessment",
-                               "siem", "ids", "ips", "cryptography", "ethical hacking", "incident response",
-                               "zero trust architecture", "cloud security", "devsecops", "soc",
-                               "threat intelligence", "python", "compliance"],
+    "Cybersecurity Engineer": [
+        "networking", "linux", "ethical hacking", "python",
+        "firewalls", "cryptography", "owasp", "vulnerability assessment"
+    ],
 
-    "Mobile App Developer": ["android", "kotlin", "java", "flutter", "dart", "ios", "swift", "react native",
-                             "ui/ux", "firebase", "rest api", "jetpack compose", "ci/cd"],
+    "Mobile App Developer": [
+        "java", "kotlin", "android", "flutter", "dart",
+        "rest api", "firebase", "git", "ui/ux"
+    ],
 
-    "Full Stack Developer": ["html", "css", "javascript", "react", "node.js", "express", "mongodb", "sql", "api",
-                             "git", "typescript", "next.js", "python", "fastapi", "postgresql", "docker",
-                             "tailwind css", "aws", "system design"],
 
-    "QA/Test Engineer": ["manual testing", "automation testing", "selenium", "pytest", "bug tracking", "jira",
-                         "test cases", "unit testing", "integration testing", "qa process", "playwright",
-                         "cypress", "api testing", "postman", "ci/cd", "performance testing",
-                         "ai testing tools", "test planning"],
+
+    "QA / Test Engineer": [
+        "manual testing", "test cases", "bug tracking", "selenium",
+        "pytest", "jira", "api testing", "postman", "git"
+    ],
+
+    "GenAI Engineer": [
+        "python","llm", "langchain", "openai api", "prompt engineering",
+        "rag", "vector databases", "hugging face",
+        "fastapi", "git", "embeddings"
+    ],
+
+    "Prompt Engineer": [
+        "prompt design", "llm", "openai api", "python",
+        "chatgpt", "claude", "few-shot prompting", "evaluation",
+        "documentation", "langchain"
+    ],
+
+    "MLOps Engineer": [
+        "python", "docker", "git", "mlflow", "fastapi",
+        "ci/cd", "linux", "model deployment", "monitoring"
+    ],
+
+    "AI Product Analyst": [
+        "sql", "python", "data analysis", "excel",
+        "a/b testing", "data visualization", "metrics",
+        "power bi", "documentation"
+    ],
+
+    "Business Analyst": [
+        "sql", "excel", "data analysis", "power bi",
+        "documentation", "jira", "reporting", "agile", "communication"
+    ],
+
+    "IT Support Engineer": [
+        "networking", "linux", "windows", "troubleshooting",
+        "hardware", "customer support", "documentation", "security"
+    ],
 }
 
 CERTIFICATES = ["aws", "google", "microsoft", "amazon", "forage", "ibm", "meta", "coursera", "udemy", "freecodecamp",
@@ -108,11 +159,11 @@ CERTIFICATES = ["aws", "google", "microsoft", "amazon", "forage", "ibm", "meta",
 EXPECTED_SECTIONS = ["education", "experience", "projects", "skills", "certifications","summary"]
 
 HIRING_STRATEGIES = {
-    "Balanced": {"skill": 30, "exp": 30, "format": 15, "jd": 15, "cert": 10},
-    "Entry-Level": {"skill": 40, "exp": 5, "format": 25, "jd": 15, "cert": 15},
-    "Medium-Level": {"skill": 40, "exp": 35, "jd": 10, "format": 10, "cert": 5},
-    "Senior-Level": {"skill": 25, "exp": 50, "format": 10, "jd": 10, "cert": 5},
-}
+        "Balanced": {"skill": 30, "exp": 30, "format": 15, "jd": 15, "cert": 10},
+        "Entry-Level": {"skill": 40, "exp": 5, "format": 25, "jd": 15, "cert": 15},
+        "Medium-Level": {"skill": 40, "exp": 35, "jd": 10, "format": 10, "cert": 5},
+        "Senior-Level": {"skill": 25, "exp": 45, "format": 5, "jd": 20, "cert": 5},
+    }
 
 
 #loading functions
@@ -307,7 +358,7 @@ def check_authenticity(resume_text:str,matched_skills:list,jd_sim:float )->str:
 
     for skill in matched_skills:
         count = len(re.findall(rf'\b{re.escape(skill)}\b',resume_lower))
-        if count>7:
+        if count>15:
             return f"⚠️ High Risk (Stuffing: '{skill}')"
 
     ai_score = get_ai_plag(resume_text)
