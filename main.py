@@ -1,4 +1,5 @@
-from sklearn.linear_model import LinearRegression
+
+
 from database import get_db_connection, init_db
 import tempfile
 import matplotlib.patches as mpatches
@@ -15,7 +16,7 @@ import base64
 from datetime import datetime, timezone, timedelta
 from typing import List
 
-import pymupdf  # Upgraded from fitz to fix deprecation warning
+import pymupdf  
 import matplotlib.pyplot as plt
 import pandas as pd
 import spacy
@@ -26,8 +27,8 @@ from spacy.matcher import PhraseMatcher
 import uvicorn
 from transformers import pipeline
 
-# --- NEW AI IMPORTS ---
 from sentence_transformers import SentenceTransformer, util
+from sklearn.linear_model import LinearRegression
 
 init_db()
 app = FastAPI()
@@ -503,7 +504,7 @@ def welcome():
 
 @app.post("/analyze")
 async def process_resumes(
-        files:List[UploadFile] = File(...),
+        files: List[UploadFile] = File(...),
         hiring_strategy: str = Form("Balanced"),
         input_mode: str = Form("Use Job Role"),
         role: str = Form("AI/ML Engineer"),
@@ -614,61 +615,61 @@ async def process_resumes(
 
     cluster_chart_base64 = generate_cluster_chart(report_data)
 
-#     try:
-#         ist_time = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
-#         time_str = ist_time.strftime('%Y-%m-%d %H:%M:%S')
-#         connection = get_db_connection()
-#         cursor = connection.cursor()
-#         for res in report_data:
-#             cursor.execute("""
-#                         INSERT INTO candidates (
-#                             resume_name, decision, authenticity, 
-#                             final_score, skill_score, exp_years,
-#                             timestamp
-#                         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-#                     """, (
-#                 res['Resume'], res['Decision'], res['Authenticity'],
-#                 res['Final Score'], res['skill_score'], res['experience_years'], time_str
-#             ))
-#         connection.commit()
-#     except Exception as e:
-#         print(f"⚠️ Database Error: {e}")
-#     finally:
-#         connection.close()
+    try:
+        ist_time = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
+        time_str = ist_time.strftime('%Y-%m-%d %H:%M:%S')
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        for res in report_data:
+            cursor.execute("""
+                        INSERT INTO candidates (
+                            resume_name, decision, authenticity, 
+                            final_score, skill_score, exp_years,
+                            timestamp
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                res['Resume'], res['Decision'], res['Authenticity'],
+                res['Final Score'], res['skill_score'], res['experience_years'], time_str
+            ))
+        connection.commit()
+    except Exception as e:
+        print(f"⚠️ Database Error: {e}")
+    finally:
+        connection.close()
 
-#     return {
-#         "results": report_data,
-#         "skipped": skipped_files,
-#         "excel_base64": excel_base64,
-#         "cluster_chart": cluster_chart_base64
-#     }
-
-
-# @app.get("/history")
-# async def get_history():
-#     try:
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
-#         cursor.execute(
-#             "SELECT id, resume_name, decision, final_score, timestamp FROM candidates ORDER BY timestamp DESC LIMIT 50")
-#         rows = cursor.fetchall()
-#         conn.close()
-#         return {"results": [dict(row) for row in rows]}
-#     except Exception as e:
-#         return {"results": [], "error": str(e)}
+    return {
+        "results": report_data,
+        "skipped": skipped_files,
+        "excel_base64": excel_base64,
+        "cluster_chart": cluster_chart_base64
+    }
 
 
-# @app.delete("/clear_history")
-# async def clear_history():
-#     try:
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
-#         cursor.execute("DELETE FROM candidates")
-#         conn.commit()
-#         conn.close()
-#         return {"message": "Database cleared successfully"}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+@app.get("/history")
+async def get_history():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, resume_name, decision, final_score, timestamp FROM candidates ORDER BY timestamp DESC LIMIT 50")
+        rows = cursor.fetchall()
+        conn.close()
+        return {"results": [dict(row) for row in rows]}
+    except Exception as e:
+        return {"results": [], "error": str(e)}
+
+
+@app.delete("/clear_history")
+async def clear_history():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM candidates")
+        conn.commit()
+        conn.close()
+        return {"message": "Database cleared successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/comparison")
