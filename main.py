@@ -1,5 +1,4 @@
 from sklearn.linear_model import LinearRegression
-from database import get_db_connection, init_db
 import tempfile
 import matplotlib.patches as mpatches
 from sklearn.cluster import KMeans
@@ -12,10 +11,10 @@ import io
 import os.path
 import re
 import base64
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 from typing import List
 
-import pymupdf  # Upgraded from fitz to fix deprecation warning
+import pymupdf  
 import matplotlib.pyplot as plt
 import pandas as pd
 import spacy
@@ -25,11 +24,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from spacy.matcher import PhraseMatcher
 import uvicorn
 from transformers import pipeline
-
-# --- NEW AI IMPORTS ---
 from sentence_transformers import SentenceTransformer, util
 
-init_db()
 app = FastAPI()
 
 origins = [
@@ -45,7 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- GLOBAL AI MODEL LOADERS ---
+
 try:
     ai_detector = pipeline("text-classification", model="roberta-base-openai-detector")
 except Exception as e:
@@ -62,8 +58,6 @@ try:
 except Exception as e:
     print(f"Failed to load SBERT model: {e}")
     sbert_model = None
-
-# --- CONSTANTS & ONTOLOGIES ---
 
 SKILL_ONTOLOGY = {
     "deep learning": ["pytorch", "tensorflow", "keras", "neural networks", "neural network", "transformers", "cnn",
@@ -176,13 +170,13 @@ EXPECTED_SECTIONS = ["education", "experience", "projects", "skills", "certifica
 
 HIRING_STRATEGIES = {
     "Balanced": {"skill": 30, "exp": 30, "format": 15, "jd": 15, "cert": 10},
-    "Entry-Level": {"skill": 40, "exp": 5, "format": 25, "jd": 15, "cert": 15},
+    "Entry-Level": {"skill": 35, "exp": 5, "format": 25, "jd": 20, "cert": 15},
     "Medium-Level": {"skill": 40, "exp": 35, "jd": 10, "format": 10, "cert": 5},
     "Senior-Level": {"skill": 25, "exp": 45, "format": 5, "jd": 20, "cert": 5},
 }
 
 
-# --- DOCUMENT PROCESSING ---
+# get pdf file data
 def extract_text_from_file(file_content: bytes, filename: str):
     text = ""
     try:
@@ -201,6 +195,7 @@ def extract_text_from_file(file_content: bytes, filename: str):
     return text
 
 
+# check is resume or not
 def is_valid_resume(text: str) -> bool:
     if not text or not text.strip():
         return False
@@ -213,6 +208,7 @@ def is_valid_resume(text: str) -> bool:
     return match_count >= 4
 
 
+# ai authentication
 def get_ai_plag(text: str) -> float:
     if not ai_detector or not text.strip():
         return 0.0
@@ -232,6 +228,7 @@ def get_ai_plag(text: str) -> float:
         return 0.0
 
 
+# get the contact information from the resume
 def extract_contact_info(text):
     email = re.search(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", text)
     phone = re.search(r"(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}", text)
@@ -240,6 +237,7 @@ def extract_contact_info(text):
         0) if linkedin else "---"
 
 
+# mathching the skills
 def extract_skills_from_ner(text, skill_set):
     matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
     patterns = [nlp(skill) for skill in skill_set]
@@ -248,6 +246,7 @@ def extract_skills_from_ner(text, skill_set):
     return list(set([doc[start:end].text.lower() for match_id, start, end in matcher(doc)]))
 
 
+# for get cetification and count
 def extract_certifications(text):
     matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
     patterns = [nlp(cert.lower()) for cert in CERTIFICATES]
@@ -255,7 +254,7 @@ def extract_certifications(text):
     doc = nlp(text)
     return list(set([doc[start:end].text.lower() for match_id, start, end in matcher(doc)]))
 
-
+# experience count
 def extract_experience_nlp(text):
     text_lower = text.lower()
     start_match = re.search(
@@ -324,23 +323,20 @@ def extract_experience_nlp(text):
     return exp_years, exp_score
 
 
-# --- UPGRADED SEMANTIC MATH ---
+# smart matching of combined
 def smart_match(skills_required, resume_text):
-    # Step A: Build master list from requirements and ontology
     master_skill_list = set([skill.lower() for skill in skills_required])
     for parent, children in SKILL_ONTOLOGY.items():
         master_skill_list.add(parent.lower())
         for child in children:
             master_skill_list.add(child.lower())
 
-    # Step B: Extract skills using SpaCy
     found_in_resume_raw = extract_skills_from_ner(resume_text, list(master_skill_list))
     found_in_resume = set([skill.lower() for skill in found_in_resume_raw])
 
     matched = []
     missed = []
 
-    # Step C: Compare against Requirements and Ontology Map
     for req_skill in skills_required:
         req_skill_lower = req_skill.lower()
 
@@ -372,7 +368,6 @@ def compute_similarity(jd_text, resume_text):
     if not resume_clean.strip() or not jd_clean.strip():
         return 0.0
 
-    # SBERT Semantic Embedding
     jd_emb = sbert_model.encode(jd_clean, convert_to_tensor=True)
     res_emb = sbert_model.encode(resume_clean, convert_to_tensor=True)
 
@@ -402,8 +397,7 @@ def check_authenticity(resume_text: str, matched_skills: list, jd_sim: float) ->
         return f"⚠️ Mixed Content ({ai_score}% AI)"
     return "✅ Verified"
 
-
-# --- VISUALIZATION OUTPUTS ---
+# this is for get the comparison charts
 def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart_type):
     plt.figure(figsize=(12, 5))
     if chart_type == "Bar":
@@ -427,6 +421,7 @@ def generate_comparison_chart(name_a, name_b, scores_a, scores_b, metrics, chart
     return base64.b64encode(buffer.read()).decode()
 
 
+# for clustering
 def generate_cluster_chart(report_data):
     if len(report_data) < 3:
         return ""
@@ -465,9 +460,9 @@ def generate_cluster_chart(report_data):
         spine.set_color('#334155')
     from matplotlib.lines import Line2D
     legend_elements = [
-        Line2D([0], [0], marker='o', color='w', label='Top Talent', markerfacecolor='#10b981', markersize=10),
-        Line2D([0], [0], marker='o', color='w', label='Average', markerfacecolor='#f59e0b', markersize=10),
-        Line2D([0], [0], marker='o', color='w', label='Below Cutoff', markerfacecolor='#ef4444', markersize=10)
+        Line2D([0], [0], marker='o', color='w', label='Top Talent', markerfacecolor="#00f821", markersize=12),
+        Line2D([0], [0], marker='o', color='w', label='Average', markerfacecolor="#f39e0c", markersize=11),
+        Line2D([0], [0], marker='o', color='w', label='Below Cutoff', markerfacecolor="#ff0000", markersize=10)
     ]
     plt.legend(handles=legend_elements, facecolor='#1e293b', labelcolor='white', edgecolor='#334155')
     plt.grid(True, linestyle='--', alpha=0.3, color="white")
@@ -479,7 +474,6 @@ def generate_cluster_chart(report_data):
     return base64.b64encode(buffer.read()).decode()
 
 
-# --- MACHINE LEARNING MODEL: SALARY PREDICTION ---
 np.random.seed(42)
 final_scores = np.random.randint(40, 101, 1000)
 experience = np.random.randint(0, 16, 1000)
@@ -495,7 +489,8 @@ def predict_salary(final_score, exp_years):
     return f"₹{int(prediction[0]):,} per month"
 
 
-# --- API ENDPOINTS ---
+
+# API Endpoints are starting below
 @app.get("/")
 def welcome():
     return {"message": "Ai Resume Screener is Running ✅"}
@@ -545,7 +540,7 @@ async def process_resumes(
         jd_sim = compute_similarity(" ".join(skills_required), processed_text)
         fmt_score = analyze_formatting(processed_text)
 
-        # Using Upgraded smart_match!
+        
         matched_skills, missed_skills = smart_match(skills_required, processed_text)
         skill_score = (len(matched_skills) / len(skills_required) * 100) if skills_required else 0
 
@@ -614,61 +609,12 @@ async def process_resumes(
 
     cluster_chart_base64 = generate_cluster_chart(report_data)
 
-    try:
-        ist_time = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
-        time_str = ist_time.strftime('%Y-%m-%d %H:%M:%S')
-        connection = get_db_connection()
-        cursor = connection.cursor()
-        for res in report_data:
-            cursor.execute("""
-                        INSERT INTO candidates (
-                            resume_name, decision, authenticity, 
-                            final_score, skill_score, exp_years,
-                            timestamp
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                res['Resume'], res['Decision'], res['Authenticity'],
-                res['Final Score'], res['skill_score'], res['experience_years'], time_str
-            ))
-        connection.commit()
-    except Exception as e:
-        print(f"⚠️ Database Error: {e}")
-    finally:
-        connection.close()
-
     return {
         "results": report_data,
         "skipped": skipped_files,
         "excel_base64": excel_base64,
         "cluster_chart": cluster_chart_base64
     }
-
-
-@app.get("/history")
-async def get_history():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, resume_name, decision, final_score, timestamp FROM candidates ORDER BY timestamp DESC LIMIT 50")
-        rows = cursor.fetchall()
-        conn.close()
-        return {"results": [dict(row) for row in rows]}
-    except Exception as e:
-        return {"results": [], "error": str(e)}
-
-
-@app.delete("/clear_history")
-async def clear_history():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM candidates")
-        conn.commit()
-        conn.close()
-        return {"message": "Database cleared successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/comparison")
@@ -702,15 +648,19 @@ async def compare_resumes(
 
     matched_a, _ = smart_match(skills_required, text_a)
     matched_b, _ = smart_match(skills_required, text_b)
+    
     skill_a = len(matched_a) / len(skills_required) * 100
     skill_b = len(matched_b) / len(skills_required) * 100
 
     _, exp_a = extract_experience_nlp(text_a)
     _, exp_b = extract_experience_nlp(text_b)
+    
     jd_sim_a = compute_similarity(" ".join(skills_required), text_a)
     jd_sim_b = compute_similarity(" ".join(skills_required), text_b)
+    
     fmt_a = analyze_formatting(text_a)
     fmt_b = analyze_formatting(text_b)
+    
     cert_a = min(len(extract_certifications(text_a)) * 20, 100)
     cert_b = min(len(extract_certifications(text_b)) * 20, 100)
 
