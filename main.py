@@ -1,10 +1,5 @@
-<<<<<<< HEAD
+
 from sklearn.linear_model import LinearRegression
-=======
-
-
-from database import get_db_connection, init_db
->>>>>>> 282e8173ae39946a1b6842b6ff1548ec9ab727a3
 import tempfile
 import matplotlib.patches as mpatches
 from sklearn.cluster import KMeans
@@ -30,10 +25,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from spacy.matcher import PhraseMatcher
 import uvicorn
 from transformers import pipeline
-<<<<<<< HEAD
-=======
-
->>>>>>> 282e8173ae39946a1b6842b6ff1548ec9ab727a3
 from sentence_transformers import SentenceTransformer, util
 from sklearn.linear_model import LinearRegression
 
